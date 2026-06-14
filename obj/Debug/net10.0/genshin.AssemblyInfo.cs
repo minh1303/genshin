@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("genshin")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b26577c1f088232e0b66c4309e2de4a238ea0993")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+36355b08ae5ec98c053bb24156b0f23f1b22baf9")]
 [assembly: System.Reflection.AssemblyProductAttribute("genshin")]
 [assembly: System.Reflection.AssemblyTitleAttribute("genshin")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
