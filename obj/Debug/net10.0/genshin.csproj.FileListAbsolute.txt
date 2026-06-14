@@ -129,3 +129,4 @@ C:\Users\ADMIN\RiderProjects\genshin\genshin\bin\Debug\net10.0\Microsoft.Identit
 C:\Users\ADMIN\RiderProjects\genshin\genshin\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 C:\Users\ADMIN\RiderProjects\genshin\genshin\bin\Debug\net10.0\Microsoft.IdentityModel.Tokens.dll
 C:\Users\ADMIN\RiderProjects\genshin\genshin\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\ADMIN\RiderProjects\genshin\genshin\obj\Debug\net10.0\genshin.sourcelink.json

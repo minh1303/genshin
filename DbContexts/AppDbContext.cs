@@ -13,7 +13,11 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Element>().HasIndex(x => x.Name).IsUnique();
+        modelBuilder.Entity<Character>().HasIndex(x => x.Name).IsUnique();
+        
     }
+    
+    
     public DbSet<Character> Characters { get; set; }
     public DbSet<Element> Elements { get; set; }
     public DbSet<User> Users { get; set; }

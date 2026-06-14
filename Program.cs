@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using genshin.DbContexts;
 using genshin.DTOs;
+using genshin.Helpers;
 using genshin.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -10,8 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
 builder.Services.AddOpenApi();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var secretKey = builder.Configuration["Authentication:JwtSecretKey"];
@@ -42,6 +42,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+
 
 app.MapPost("/register", async (AppDbContext db, UserRecord userRecord) =>
 {  
@@ -84,26 +86,69 @@ app.MapPost("/login", async (AppDbContext db, UserRecord userDetails) =>
     });
 });
 
-app.MapGet("/", async (AppDbContext db) =>  await db.Characters.ToListAsync());
-app.MapPost("/", async (AppDbContext db, CharacterRecord characterRecord) =>
+app.MapGet("/characters", async (AppDbContext db) =>  await db.Characters.ToListAsync());
+app.MapPost("/characters", async (AppDbContext db, CharacterRecord characterRecord) =>
 {
-    var element = db.Elements.FirstAsync(e => e.Name == characterRecord.ElementName);
+    var element = await db.Elements.FirstAsync(e => e.Name == characterRecord.ElementName);
+    var nameError = ValidationHelper.ValidateName(characterRecord.Name);
+    var rarityError = ValidationHelper.ValidateRarity(characterRecord.Rarity);
+    if (nameError != null) return Results.BadRequest(nameError);
+    if (rarityError != null) return Results.BadRequest(rarityError);
+
     var character = new Character
     {
         Name = characterRecord.Name,
         Rarity = characterRecord.Rarity,
         ElementId = element.Id,
-        Element = element.Result
     };
-    db.Characters.Add(character);
+    await db.Characters.AddAsync(character);
     await db.SaveChangesAsync();
     return Results.Created($"/characters/{character.Id}", character.Id);
 
 }).RequireAuthorization(policy => policy.RequireRole("Admin"));
-app.MapPost("/elements", (AppDbContext db, List<Element> elements) =>
+
+app.MapPatch("/characters/{id}", async ( int id, AppDbContext db, UpdateCharacterRecord characterRecord) =>
+{
+    var character = await db.Characters.FindAsync(id);
+    Console.WriteLine(character);
+    if (character == null)
+    {
+        // Count total characters for debugging
+        var total = await db.Characters.CountAsync();
+        Console.WriteLine($"Character {id} not found");
+        return Results.NotFound($"Character {id} not found. Total characters in DB: {total}");
+    }
+    if (characterRecord.Name != null)
+    {
+        var nameError = ValidationHelper.ValidateName(characterRecord.Name);
+        if (nameError != null) return Results.BadRequest(nameError);
+        character.Name= characterRecord.Name;
+    }
+
+    if (characterRecord.Rarity != null)
+    {
+        var rarityError = ValidationHelper.ValidateRarity(characterRecord.Rarity.Value);
+        if (rarityError != null) return Results.BadRequest(rarityError);
+        character.Rarity = characterRecord.Rarity.Value;
+    }
+
+    await db.SaveChangesAsync();
+    return Results.Ok(character);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapDelete("/characters/{id}", async (AppDbContext db, int id, UpdateCharacterRecord characterRecord) =>
+{
+    var character = await db.Characters.FindAsync(id);
+    if (character == null) return  Results.NotFound($"Character {id} not found");  
+    db.Characters.Remove(character);    
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapPost("/elements/bulk",async  (AppDbContext db, List<Element> elements) =>
 {
     elements.ForEach(element => db.Add(element));
-    db.SaveChanges();
+    await db.SaveChangesAsync();
 }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 app.Run();
