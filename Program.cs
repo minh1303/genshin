@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -42,6 +43,23 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("Request: {Method} {Path}", 
+        context.Request.Method, 
+        context.Request.Path);
+    var start = DateTime.UtcNow;
+    await next();
+    var duration = DateTime.UtcNow - start;
+    logger.LogInformation("Response: {Method} {Path} - {StatusCode} ({Duration}ms)",
+        context.Request.Method,
+        context.Request.Path,
+        context.Response.StatusCode,
+        duration.TotalMilliseconds);
+});
 
 
 
@@ -111,13 +129,6 @@ app.MapPatch("/characters/{id}", async ( int id, AppDbContext db, UpdateCharacte
 {
     var character = await db.Characters.FindAsync(id);
     Console.WriteLine(character);
-    if (character == null)
-    {
-        // Count total characters for debugging
-        var total = await db.Characters.CountAsync();
-        Console.WriteLine($"Character {id} not found");
-        return Results.NotFound($"Character {id} not found. Total characters in DB: {total}");
-    }
     if (characterRecord.Name != null)
     {
         var nameError = ValidationHelper.ValidateName(characterRecord.Name);
@@ -136,7 +147,7 @@ app.MapPatch("/characters/{id}", async ( int id, AppDbContext db, UpdateCharacte
     return Results.Ok(character);
 }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
-app.MapDelete("/characters/{id}", async (AppDbContext db, int id, UpdateCharacterRecord characterRecord) =>
+app.MapDelete("/characters/{id}", async (AppDbContext db, int id) =>
 {
     var character = await db.Characters.FindAsync(id);
     if (character == null) return  Results.NotFound($"Character {id} not found");  
